@@ -1,0 +1,292 @@
+**Case Study 1: Job Data Analysis**
+TASK OF THE PROJECT (CASE STUDY1):
+1)	create database job_data_analysis;
+use job_data_analysis;
+CREATE TABLE job_events (
+ds DATE,
+job_id INT,
+actor_id INT,
+event VARCHAR(20),
+language VARCHAR(50),
+time_spent INT,
+org CHAR(1)
+);
+2)	INSERT INTO job_events (ds, job_id, actor_id, event, language, time_spent, org) VALUES
+(STR_TO_DATE('11/30/2020', '%m/%d/%Y'), 21, 1001, 'skip', 'English', 15, 'A'),
+(STR_TO_DATE('11/30/2020', '%m/%d/%Y'), 22, 1006, 'transfer', 'Arabic', 25, 'B'),
+(STR_TO_DATE('11/29/2020', '%m/%d/%Y'), 23, 1003, 'decision', 'Persian', 20, 'C'),
+(STR_TO_DATE('11/28/2020', '%m/%d/%Y'), 23, 1005, 'transfer', 'Persian', 22, 'D'),
+(STR_TO_DATE('11/28/2020', '%m/%d/%Y'), 25, 1002, 'decision', 'Hindi', 11, 'B'),
+(STR_TO_DATE('11/27/2020', '%m/%d/%Y'), 11, 1007, 'decision', 'French', 104, 'D'),
+(STR_TO_DATE('11/26/2020', '%m/%d/%Y'), 23, 1004, 'skip', 'Persian', 56, 'A'),
+(STR_TO_DATE('11/25/2020', '%m/%d/%Y'), 20, 1003, 'transfer', 'Italian', 45, 'C');
+
+/*Task1: Write an SQL query to calculate the number of jobs reviewed per hour for
+ each day in November 2020.  isme objective or task dono hai achhe dhayn se krna*/
+
+ SELECT 
+  ROUND(COUNT(*) / SUM(time_spent) * 60, 4) AS 'avg jobs reviewed per day per hour',
+  ROUND(COUNT(*) / (SUM(time_spent) * 60), 8) AS 'avg jobs reviewed per day per second'
+FROM job_events
+WHERE MONTH(ds) = 11 AND YEAR(ds) = 2020;
+
+/*Task 2 Write an SQL query to calculate the 7-day rolling average of throughput. Additionally, explain whether you prefer using the daily metric or the 7-day rolling average for throughput, and why.*/
+SELECT ROUND(COUNT(event)/SUM(time_spent), 2) AS "Weekly Throughput" FROM job_events;
+SELECT ds AS Dates, 
+       ROUND(COUNT(event)/SUM(time_spent), 2) AS "Daily Throughput" 
+FROM job_events
+GROUP BY ds 
+ORDER BY ds;
+
+EXPLAIONTION:
+We prefer using the 7-day rolling average for throughput because:
+•	It reduces daily fluctuations, giving a clearer trend.
+•	It’s more reliable for understanding performance over time.
+•	It helps identify long-term improvements or drops in system efficiency.
+This makes it an ideal metric for monitoring, reporting to stakeholders, and making strategic decisions.
+
+#TASK 3: Write an SQL query to calculate the percentage share of each language over the last 30 days.
+SELECT language AS Languages, 
+       ROUND(100 * COUNT(*)/total, 2) AS Percentage, 
+       sub.total
+FROM job_events
+CROSS JOIN (SELECT COUNT(*) AS total FROM job_events) AS sub
+GROUP BY language, sub.total;
+
+# TASK 4: Write an SQL query to display duplicate rows from the job_data table.
+SELECT actor_id, 
+       COUNT(*) AS Duplicates 
+FROM job_events 
+GROUP BY actor_id 
+HAVING COUNT(*) > 1;
+
+**Case Study 2: Investigating Metric Spike**
+Project Description:
+This project aims to analyze user behavior, growth, retention, and email engagement patterns for a digital product. By examining weekly trends and engagement at both user and device levels, the project provides a comprehensive understanding of how users interact with the product and respond to email campaigns.
+The purpose of this analysis is to:
+•	Monitor user activity and growth trends.
+•	Identify retention performance by weekly cohorts.
+•	Evaluate how users interact with emails (open rate, clickthrough rate, etc.).
+•	Provide actionable insights for product and marketing teams.
+Approach:
+We broke the project into five major parts:
+1.	Weekly User Engagement – To track how active users are each week.
+2.	User Growth Analysis – To see how many new users are joining weekly.
+3.	Weekly Retention Analysis – To observe how many users return in future weeks after signup.
+4.	Device-wise Weekly Engagement – To track usage patterns based on device types.
+5.	Email Engagement Analysis – To find open and click-through behavior in emails.
+We used USERS, EVENTS and EMAIL_EVENT tables to derive the above insights using weekly aggregations and cohort analysis.
+Tech-Stack Used:
+•	MySQL Workbench 8.0 – For writing and executing SQL.
+Insights:
+•	Weekly user activity peaked around Week 20, possibly due to a new feature launch.
+•	Growth stagnated after Week 24, suggesting a need for re-engagement strategies.
+•	Only ~21% of users were retained after 3 weeks.
+•	Most users used "Acer Aspire Notebook" and "Dell Inspiron Desktop" for accessing the platform.
+•	Email open rates were decent (~31%), but click-through rate was low (~10.5%).
+
+Result:
+The study provided a strong foundation for decision-making in both marketing and product teams. Based on this, reactivation campaigns can be targeted, device support decisions
+can be improved, and email content strategies can be revisited for higher engagement.
+TASK OF THE PROJECT (CASE STUDY2):
+create database Project3;
+use Project3;
+#Table 1 users:
+CREATE TABLE users (
+    user_id INT,
+    created_at VARCHAR(100),
+    company_id INT,
+    language VARCHAR(150),
+    activated_at VARCHAR(150),
+    state VARCHAR(150)
+);
+LOAD DATA INFILE 'C:/ProgramData/MySQL/MySQL Server 8.0/Uploads/users.csv'
+INTO TABLE users
+FIELDS TERMINATED BY ','
+ENCLOSED BY '"'
+LINES TERMINATED BY '\n'
+IGNORE 1 ROWS;
+
+ALTER TABLE users ADD COLUMN temp_created_at DATETIME;
+UPDATE users
+SET temp_created_at = STR_TO_DATE(created_at, '%d-%m-%Y %H:%i')
+WHERE created_at IS NOT NULL AND LENGTH(TRIM(created_at)) > 0;
+ALTER TABLE users CHANGE temp_created_at created_at DATETIME;
+
+ALTER TABLE users DROP COLUMN created_at;
+UPDATE users
+SET state = 'active'
+WHERE TRIM(state) LIKE '%active%';
+select * from users;
+
+#Table 2 events:
+CREATE TABLE events (
+  user_id INT,
+  occurred_at VARCHAR(100),
+  event_type VARCHAR(100),
+  event_name VARCHAR(100),
+  location VARCHAR(100),
+  device VARCHAR(100),
+  user_type VARCHAR(100)
+);
+LOAD DATA INFILE 'C:/ProgramData/MySQL/MySQL Server 8.0/Uploads/events.csv'
+INTO TABLE events
+FIELDS TERMINATED BY ','
+ENCLOSED BY '"'
+LINES TERMINATED BY '\n'
+IGNORE 1 ROWS;
+
+ALTER TABLE events ADD COLUMN temp_occurred_at DATETIME;
+UPDATE events
+SET temp_occurred_at = STR_TO_DATE(occurred_at, '%d-%m-%Y %H:%i')
+WHERE occurred_at IS NOT NULL AND LENGTH(TRIM(occurred_at)) > 0;
+ALTER TABLE events DROP COLUMN occurred_at;
+ALTER TABLE events CHANGE temp_occurred_at occurred_at DATETIME;
+# Table 3 email-events:
+CREATE TABLE email_event (
+  user_id INT,
+  occurred_at VARCHAR(100),
+  action VARCHAR(100),
+  user_type VARCHAR(100)
+);
+LOAD DATA INFILE 'C:/ProgramData/MySQL/MySQL Server 8.0/Uploads/email_events.csv'
+INTO TABLE email_event
+FIELDS TERMINATED BY ','
+ENCLOSED BY '"'
+LINES TERMINATED BY '\n'
+IGNORE 1 ROWS;
+
+ALTER TABLE email_event ADD COLUMN temp_occurred_at DATETIME;
+UPDATE email_event
+SET temp_occurred_at = STR_TO_DATE(occurred_at, '%d-%m-%Y %H:%i')
+WHERE user_id IS NOT NULL;
+
+ALTER TABLE email_event DROP COLUMN occurred_at;
+ALTER TABLE email_event CHANGE temp_occurred_at occurred_at DATETIME;
+
+select * from users;
+select * from email_event;
+select * FROM events;
+
+#Task of the project;
+/* TASK 1: Write an SQL query to calculate the weekly user engagement.*/
+SELECT 
+  EXTRACT(WEEK FROM temp_occurred_at) AS week_num,
+  COUNT(DISTINCT user_id) AS num_users
+FROM events
+WHERE event_type = 'engagement'
+GROUP BY week_num
+ORDER BY week_num;
+
+# TASK2: Write an SQL query to calculate the user growth for the product.
+SELECT  
+  year,  
+  week_num,  
+  num_users,  
+  SUM(num_users) OVER (ORDER BY year, week_num) AS cum_users
+FROM (
+  SELECT  
+    EXTRACT(YEAR FROM created_at) AS year,  
+    EXTRACT(WEEK FROM created_at) AS week_num,  
+    COUNT(DISTINCT user_id) AS num_users
+  FROM users
+  WHERE state = 'active'
+  GROUP BY year, week_num
+  ORDER BY year, week_num
+) 
+AS sub;
+
+#TASK 3: Write an SQL query to calculate the weekly retention of users based on their sign-up cohort.
+WITH signup_cte AS (
+    SELECT DISTINCT user_id,
+           EXTRACT(WEEK FROM temp_occurred_at) AS signup_week
+    FROM events
+    WHERE event_type = 'signup_flow'
+      AND event_name = 'complete_signup'
+),
+engagement_cte AS (
+    SELECT DISTINCT user_id,
+           EXTRACT(WEEK FROM temp_occurred_at) AS engagement_week
+    FROM events
+    WHERE event_type = 'engagement'
+),
+joined_data AS (
+    SELECT 
+        s.user_id,
+        s.signup_week,
+        e.engagement_week,
+        e.engagement_week - s.signup_week AS retention_week
+    FROM signup_cte s
+    LEFT JOIN engagement_cte e
+      ON s.user_id = e.user_id
+)	
+SELECT 
+    COUNT(DISTINCT s.user_id) AS total_engaged_users,
+    SUM(CASE WHEN retention_week = 1 THEN 1 ELSE 0 END) AS retained_users
+FROM joined_data s;
+
+17 week
+WITH signup_cte AS (
+    SELECT DISTINCT user_id,
+           EXTRACT(WEEK FROM temp_occurred_at) AS signup_week
+    FROM events
+    WHERE event_type = 'signup_flow'
+      AND event_name = 'complete_signup'
+      AND EXTRACT(WEEK FROM temp_occurred_at) = 17
+),
+engagement_cte AS (
+    SELECT DISTINCT user_id,
+           EXTRACT(WEEK FROM temp_occurred_at) AS engagement_week
+    FROM events
+    WHERE event_type = 'engagement'
+),
+joined_data AS (
+    SELECT 
+        s.user_id,
+        s.signup_week,
+        e.engagement_week,
+        e.engagement_week - s.signup_week AS retention_week
+    FROM signup_cte s
+    LEFT JOIN engagement_cte e
+      ON s.user_id = e.user_id
+)
+
+SELECT 
+    COUNT(DISTINCT s.user_id) AS total_engaged_users,
+    SUM(CASE WHEN retention_week = 1 THEN 1 ELSE 0 END) AS retained_users
+FROM joined_data s;
+
+# TASK 4: Write an SQL query to calculate the weekly engagement per device.
+SELECT 
+    DATE_FORMAT(temp_occurred_at, '%x-%v') AS weeknum,
+    device,
+    COUNT(DISTINCT user_id) AS usercount
+FROM events
+WHERE event_type = 'engagement'
+GROUP BY weeknum, device
+ORDER BY weeknum, device;
+#TASK 5: Write an SQL query to calculate the email engagement metrics.
+SELECT
+  ROUND(
+    (SELECT COUNT(*) FROM email_event WHERE action = 'email_open') 
+    / (SELECT COUNT(*) FROM email_event WHERE action = 'sent_weekly_digest') * 100, 
+    4
+  ) AS email_open_rate,
+  
+  ROUND(
+    (SELECT COUNT(*) FROM email_event WHERE action = 'email_clickthrough') 
+    / (SELECT COUNT(*) FROM email_event WHERE action = 'sent_weekly_digest') * 100, 
+    4
+  ) AS email_click_rate;
+ Thankyou..........
+
+
+
+
+
+
+
+
+
+
+
