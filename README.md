@@ -17,6 +17,7 @@ We used structured SQL queries on the job_data table. The analysis was broken in
 •	Duplicate rows (~0.8%) existed and were mainly from manual data entries.
 Result:
 The analysis surfaced key inefficiencies and data patterns in job reviews. It helped in planning reviewer schedules and deciding which languages need more human resources. The rolling throughput metric was more stable and insightful than daily fluctuations.
+
 **Case Study 2: Investigating Metric Spike**
 Project Description:
 This project aims to analyze user behavior, growth, retention, and email engagement patterns for a digital product. By examining weekly trends and engagement at both user and device levels, the project provides a comprehensive understanding of how users interact with the product and respond to email campaigns.
